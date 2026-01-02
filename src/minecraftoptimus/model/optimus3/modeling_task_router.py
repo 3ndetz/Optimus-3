@@ -8,7 +8,7 @@ class TaskRouterModel(nn.Module, PyTorchModelHubMixin):
     def __init__(self):
         super().__init__()
 
-        self.bert = SentenceTransformer("/data1/Models/sentence-bert-base")
+        self.bert = SentenceTransformer("efederici/sentence-bert-base")
         self.head = nn.Sequential(nn.Linear(768, 768 * 4), nn.ReLU(), nn.Linear(768 * 4, 5))
 
     def forward(self, x):

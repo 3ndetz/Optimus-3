@@ -72,8 +72,11 @@ class Optimus3Agent(BaseAgent, ModelHubMixin):
         self.cache_task = None
 
         self.model = Optimus3ForConditionalGeneration.from_pretrained(
-            mllm_model_path, attn_implementation="flash_attention_2", torch_dtype=torch.bfloat16
+            mllm_model_path, # attn_implementation="flash_attention_2",
+            torch_dtype=torch.float16, # load_in_4bit=True
         )
+        # MPS, was bfloat16
+        # TODO select dtype
         self.processor = AutoProcessor.from_pretrained(mllm_model_path)
         self.task_router = TaskRouterModel.from_pretrained(task_router_ckpt_path)
 

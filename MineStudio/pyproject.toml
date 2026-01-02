@@ -29,7 +29,6 @@ dependencies = [
     "coloredlogs",
     "daemoniker",
     "lxml",
-    "cuda-python",
     "diskcache",
     "albumentations",
     "einops",

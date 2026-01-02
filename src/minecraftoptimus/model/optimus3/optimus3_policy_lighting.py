@@ -126,8 +126,10 @@ class MineLightning(L.LightningModule):
         self.cosine_weight = cosine_weight
 
         self.model = AutoModelForVision2Seq.from_pretrained(
-            model_path, attn_implementation="flash_attention_2", torch_dtype=torch.bfloat16
+            model_path, attn_implementation="flash_attention_2", torch_dtype=torch.float16
         )
+        # MPS, was bfloat16
+        # TODO select dtype
         self.processor = AutoProcessor.from_pretrained(model_path)
         self.mllm_embed_linear = torch.nn.Sequential(
             torch.nn.Linear(3584, 3584 * 2),

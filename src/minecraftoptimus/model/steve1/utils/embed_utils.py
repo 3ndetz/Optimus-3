@@ -5,9 +5,11 @@ import torch
 
 def get_prior_embed(text, mineclip, prior, device):
     """Get the embed processed by the prior."""
-    with torch.amp.autocast(str(device)):
+    if True:
+    # with torch.amp.autocast(str(device)):  # MPS has problems with this autocast
         text_embed = mineclip.encode_text(text).detach().cpu().numpy()
-    with torch.no_grad(), torch.amp.autocast(str(device)):
+    # with torch.no_grad(), torch.amp.autocast(str(device)):
+    with torch.no_grad():
         text_prompt_embed = prior(torch.tensor(text_embed).float().to(device)).cpu().detach().numpy()
     return text_prompt_embed
 

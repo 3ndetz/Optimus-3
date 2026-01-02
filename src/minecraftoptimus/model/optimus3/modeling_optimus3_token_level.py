@@ -16,14 +16,10 @@ from transformers.models.qwen2_5_vl.modeling_qwen2_5_vl import (
     Qwen2_5_VisionPatchEmbed,
     Qwen2_5_VisionRotaryEmbedding,
     Qwen2_5_VLAttention,
-    Qwen2_5_VLFlashAttention2,
     Qwen2_5_VLPatchMerger,
     Qwen2_5_VLRotaryEmbedding,
-    Qwen2_5_VLSdpaAttention,
     Qwen2_5_VLVisionAttention,
     Qwen2_5_VLVisionBlock,
-    Qwen2_5_VLVisionFlashAttention2,
-    Qwen2_5_VLVisionSdpaAttention,
     Qwen2MLP,
     Qwen2RMSNorm,
 )
@@ -53,11 +49,6 @@ else:
 logger = logging.get_logger(__name__)
 
 
-QWEN2_5_VL_VISION_ATTENTION_CLASSES = {
-    "eager": Qwen2_5_VLVisionAttention,
-    "flash_attention_2": Qwen2_5_VLVisionFlashAttention2,
-    "sdpa": Qwen2_5_VLVisionSdpaAttention,
-}
 
 
 class Optimus3PreTrainedModel(PreTrainedModel):
@@ -330,11 +321,7 @@ class Optimus3MoE(nn.Module):
         return final_hidden_states
 
 
-QWEN2_5_VL_ATTENTION_CLASSES = {
-    "eager": Qwen2_5_VLAttention,
-    "flash_attention_2": Qwen2_5_VLFlashAttention2,
-    "sdpa": Qwen2_5_VLSdpaAttention,
-}
+
 
 
 class Optimus3DecoderLayer(nn.Module):
@@ -347,7 +334,7 @@ class Optimus3DecoderLayer(nn.Module):
                 f"Sliding Window Attention is enabled but not implemented for `{config._attn_implementation}`; "
                 "unexpected results may be encountered."
             )
-        self.self_attn = QWEN2_5_VL_ATTENTION_CLASSES[config._attn_implementation](config, layer_idx)
+        self.self_attn = Qwen2_5_VLAttention(config, layer_idx)
 
         self.mlp = Qwen2MLP(config) if layer_idx < config.n_dense_layers else Optimus3MoE(config)
         self.input_layernorm = Qwen2RMSNorm(config.hidden_size, eps=config.rms_norm_eps)

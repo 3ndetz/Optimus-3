@@ -176,12 +176,12 @@ async def startup_event():
     if gpu_info.get("gpu_available") and gpu_info.get("gpus"):
         for idx, gpu in enumerate(gpu_info.get("gpus")):
             free_mem = gpu.get("total_memory_MB") - gpu.get("used_memory_MB")
-            if free_mem >= 40000:  # 40GB
+            if free_mem >= 20000:  # 40GB
                 default_device = f"cuda:{idx}"
                 logger.info(f"choose GPU{idx}, free memory {free_mem}MB, device: {default_device}")
                 break
         else:
-            logger.info("No GPU with >= 40GB of available memory found, use CPU")
+            logger.info("No GPU with >= 20GB of available memory found, use CPU")
     else:
         logger.info("GPU not available, use CPU")
 
@@ -226,9 +226,9 @@ async def reset(reset_data: ResetData):
         helper = {"craft": CraftWorker(env), "smelt": SmeltWorker(env), "equip": EquipWorker(env)}
         if not model:
             model = Optimus3Agent(
-                "path_to_action_head/20250526-Optimus3-Policy",
-                "path_to_optimus3/Optimus3",
-                "path_to_task_router/optimus3-task-router",
+                "MinecraftOptimus/Optimus-3-ActionHead",
+                "MinecraftOptimus/Optimus-3",
+                "MinecraftOptimus/Optimus-3-Task-Router",
                 device=reset_data.device,
             )
         obs_b64 = ndarray_to_base64(current_info["pov"])
@@ -456,4 +456,5 @@ async def get_status():
 if __name__ == "__main__":
     import uvicorn
     #  input the host(ip of server), e.g., 10.xx.xx.xx
-    uvicorn.run("gui_server:app", host="", port=9500)
+    uvicorn.run("gui_server:app", host="0.0.0.0", port=9500)
+    # TODO move in env or smth

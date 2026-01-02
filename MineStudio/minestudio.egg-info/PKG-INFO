@@ -26,7 +26,6 @@ Requires-Dist: rich
 Requires-Dist: coloredlogs
 Requires-Dist: daemoniker
 Requires-Dist: lxml
-Requires-Dist: cuda-python
 Requires-Dist: diskcache
 Requires-Dist: albumentations
 Requires-Dist: einops

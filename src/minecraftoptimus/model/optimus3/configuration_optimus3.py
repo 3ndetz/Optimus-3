@@ -25,6 +25,7 @@ class Optimus3VisionConfig(PretrainedConfig):
         window_size=112,
         out_hidden_size=3584,
         fullatt_block_indexes=[7, 15, 23, 31],
+        initializer_range=0.02,  # <-- Add this line
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -42,6 +43,7 @@ class Optimus3VisionConfig(PretrainedConfig):
         self.window_size = window_size
         self.fullatt_block_indexes = fullatt_block_indexes
         self.out_hidden_size = out_hidden_size
+        self.initializer_range = initializer_range  # <-- And this line
 
 
 class Optimus3Config(PretrainedConfig):
@@ -100,7 +102,10 @@ class Optimus3Config(PretrainedConfig):
             self.vision_config = self.sub_configs["vision_config"](**vision_config)
         elif vision_config is None:
             self.vision_config = self.sub_configs["vision_config"]()
-
+        # Add this after setting self.num_hidden_layers
+        if not hasattr(self, "layer_types"):
+            # Default: all layers are "attention", or set as needed
+            self.layer_types = ["attention"] * num_hidden_layers
         self.vocab_size = vocab_size
         self.max_position_embeddings = max_position_embeddings
         self.hidden_size = hidden_size

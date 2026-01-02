@@ -246,11 +246,18 @@ class Optimus3ActionAgent(ModelHubMixin):
         return minerl_action
 
     def optimus3_action(self, embed, obs, task: str):
+        embed = embed.to(self.device)  # error on mps!
         embed = self.mllm_embed_linear(embed)  # [bs,1,512]
         minerl_obs = {"pov": obs}
-
+        # embed = embed.to()
+        # VERY DEVICE PROBLEMATIC
+        # can't go on mac mps
         _prompt_embed = get_prior_embed(task, self.mineclip, self.prior, self.device)
+        
+        # _prompt_embed = _prompt_embed.to("cpu")
+        
         embed = embed.reshape(*_prompt_embed.shape)
+        embed = embed.to(self.device)  # MPS
         embed = self.prior(embed, deterministic=False)
 
         # calculate the cosine similarity between the prompt and the prior

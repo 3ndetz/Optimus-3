@@ -1,3 +1,8 @@
 LLaMA-Factory/
 __pycache__/
 logs/
+*.db
+*.pyc
+.DS_Store
+.egg-info*
+.env

@@ -18,7 +18,6 @@ attrdict
 easydict
 
 # minestudio
-av==11.0.0
 opencv-python
 setuptools
 tqdm
@@ -40,7 +39,6 @@ rich
 coloredlogs
 daemoniker
 lxml
-cuda-python
 diskcache
 albumentations
 einops

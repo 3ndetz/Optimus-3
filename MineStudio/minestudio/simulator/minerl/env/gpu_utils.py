@@ -5,8 +5,11 @@ LastEditTime: 2024-11-29 11:07:37
 FilePath: /MineStudio/minestudio/simulator/minerl/env/gpu_utils.py
 """
 
+        # MPS
+        # TODO graceful handle for MPS and for CUDAs with fallback
+
 # https://nvidia.github.io/cuda-python/
-from cuda import cuda, cudart
+# from cuda import cuda, cudart # MPS
 import argparse
 import os
 
@@ -25,16 +28,16 @@ def call_and_check_error(func):
 
 
 def getCudaDeviceCount():
-    return call_and_check_error(cudart.cudaGetDeviceCount)()
+    return "" # call_and_check_error(cudart.cudaGetDeviceCount)() # MPS
 
 
 def getPCIBusIdByCudaDeviceOrdinal(cuda_device_id):
     """
     cuda_device_id 在 0 ~ getCudaDeviceCount() - 1 之间取值，受到 CUDA_VISIBLE_DEVICES 影响
     """
-    device = call_and_check_error(cuda.cuDeviceGet)(cuda_device_id)
-    result = call_and_check_error(cuda.cuDeviceGetPCIBusId)(100, device)
-    return result.decode("ascii").split("\0")[0]
+    #device = call_and_check_error(cuda.cuDeviceGet)(cuda_device_id)
+    #result = call_and_check_error(cuda.cuDeviceGetPCIBusId)(100, device)
+    return "" #result.decode("ascii").split("\0")[0] # MPS
 
 
 if __name__ == "__main__":
@@ -42,7 +45,8 @@ if __name__ == "__main__":
         print("cpu")
         exit(0)
     try:
-        call_and_check_error(cuda.cuInit)(0)
+        pass
+        #call_and_check_error(cuda.cuInit)(0)  # MPS
     except:
         print("cpu")
         exit(0)
