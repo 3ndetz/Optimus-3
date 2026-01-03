@@ -63,17 +63,30 @@ class Optimus3Agent(BaseAgent, ModelHubMixin):
         mllm_model_path: str,
         task_router_ckpt_path: str = "path_to_task_router/optimus3-task-router",
         device="cuda",
+        models_dtype_str: str = "bfloat16",
     ):
         super().__init__()
-        self.mine_policy = Optimus3ActionAgent.from_pretrained(policy_ckpt_path)
+        if models_dtype_str == "bfloat16":
+            self.torch_dtype = torch.bfloat16
+        elif models_dtype_str == "float16":
+            self.torch_dtype = torch.float16
+        else:
+            raise ValueError(f"Unsupported models_dtype_str: {models_dtype_str}")
+
         self.device = device
+
+
+        self.mine_policy = Optimus3ActionAgent.from_pretrained(
+            policy_ckpt_path,
+            model_torch_device=self.device
+        )
 
         self.cache_mllm_embed = None
         self.cache_task = None
 
         self.model = Optimus3ForConditionalGeneration.from_pretrained(
             mllm_model_path, # attn_implementation="flash_attention_2",
-            torch_dtype=torch.float16, # load_in_4bit=True
+            torch_dtype=self.torch_dtype, # load_in_4bit=True
         )
         # MPS, was bfloat16
         # TODO select dtype

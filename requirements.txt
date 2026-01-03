@@ -58,3 +58,6 @@ thefuzz==0.22.1
 absl-py
 dm-tree
 x_transformers==0.27.1
+
+# new
+py4j

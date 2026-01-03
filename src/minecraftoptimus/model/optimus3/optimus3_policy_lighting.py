@@ -126,7 +126,7 @@ class MineLightning(L.LightningModule):
         self.cosine_weight = cosine_weight
 
         self.model = AutoModelForVision2Seq.from_pretrained(
-            model_path, attn_implementation="flash_attention_2", torch_dtype=torch.float16
+            model_path, attn_implementation="flash_attention_2", torch_dtype=torch.bfloat16
         )
         # MPS, was bfloat16
         # TODO select dtype

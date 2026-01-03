@@ -9,6 +9,16 @@ import io
 import numpy as np
 from PIL import Image
 import torch
+
+has_cuda = torch.cuda.is_available()
+has_mps = torch.backends.mps.is_available()
+# override_device = "cpu"
+override_device = ""
+device = override_device if override_device else "cuda" if has_cuda else "mps" if has_mps else "cpu"
+if device == "cpu":
+    print("[main.py] CUDA or MPS not found. Warning: on cpu may not work because of dtypes errors, try to play with dtypes... bfloat16 often not work for cpu")
+print(f"[main.py] Using device: {device}")
+
 import argparse
 import logging
 import sys
@@ -26,6 +36,19 @@ from urllib.parse import urlparse
 
 # Import the agent (adjust the import if your path is different)
 from minecraftoptimus.model.agent.optimus3 import Optimus3Agent
+from minecraftoptimus.utils import TASK2LABEL
+
+from collections import defaultdict
+
+# Inverting the TASK2LABEL dict
+label2tasks = defaultdict(list)
+for task, label in TASK2LABEL.items():
+    label2tasks[label].append(task)
+label2tasks = dict(label2tasks)
+LABEL2TASK = label2tasks
+
+
+model: Optimus3Agent = None
 
 
 def to_java(obj, gateway):
@@ -94,7 +117,7 @@ class WebHandler(BaseHTTPRequestHandler):
                 self.app_ref.text = data.get('text', '')
                 self.app_ref.task_type = data.get('task_type', 'action')
                 # Parse camera_sensitivity as float if present, else default
-                cam_sens = data.get('camera_sensitivity', -15.0)
+                cam_sens = data.get('camera_sensitivity', 15.0)
                 try:
                     cam_sens = float(cam_sens)
                 except Exception:
@@ -152,6 +175,7 @@ class WebHandler(BaseHTTPRequestHandler):
                     <option value="captioning">Captioning</option>
                     <option value="embodied_qa">Embodied QA</option>
                     <option value="grounding">Grounding</option>
+                    <option value="router">Router</option>
                 </select>
                 <button onclick="setTask()">Set Task</button>
             </div>
@@ -340,31 +364,76 @@ class MineBridgeApp:
                     self.last_screenshot_b64 = pilImage_to_b64(img_128)  # base64.b64encode(imgio.getvalue()).decode('utf-8')
                     # --- AGENT LOGIC: handle text/task_type changes ---
                     if self.text != last_text or self.task_type != last_task_type:
-                        if model is not None and self.task_type in ["action", "planning", "captioning", "embodied_qa", "grounding"]:
+                        if model is not None and self.task_type in ["action", "planning", "captioning", "embodied_qa", "grounding", "router"]:
                             model.reset(self.text)
                             print(f"✓ Task updated: from [{last_task_type}] {last_text} to [{self.task_type}] {self.text}")
                         last_text = self.text
                         last_task_type = self.task_type
                     t3 = time.time()
-                    with torch.no_grad():
-                        if self.task_type == "action":
-                            raw_action, memory = model.get_action({"image": obs}, self.text)
-                            action_dict = copy.deepcopy(dict(numpy_to_list(raw_action)))
-                            action = action_dict
-                        elif self.task_type == "captioning":
+                    # with torch.no_grad():
+                                # reflection expects Image.Image or image url link
+                                # self.pprint("model.reflection(task, obs)", str(model.reflection(task, img)))
+                                # semi-full load (240-270w), ~110s
+# [JavaBridge] NetTyan@localhost >> model.reflection(task, obs) The image is a screenshot from the game Minecraft, showing the player's first-person view while standing in or near a dirt block with a green leafy block (possibly a bush or tree) partially visible at the bottom center. The player's health bar is partially depleted, with only one out of two hearts remaining. The hotbar contains several items, including a stone pickaxe, a stack of dirt blocks, and some other blocks. The player is currently holding a stone pickaxe in their hand. The environment appears to be outdoors, likely within or on the edge of a dirt slope or hill, as indicated by the block textures and the presence of leaves and dirt. The chat displays the message ""理解和�}> Minecraft gameplay interface, with the player's health and hunger bars visible and both fully filled
+
+
+                                # self.pprint("model.plan(task)", str(model.plan(task)))
+                                # too long 60s + full load + hallucionating
+
+# [JavaBridge] NetTyan@localhost >> model.grounding(task, obs) <think>
+# The image shows a Minecraft scene set in a grassy plains biome during daytime. In the foreground, there is a cow standing on the grass to the left. The player's viewpoint is from the first-person perspective, with their right hand visible. The player’s inventory bar at the bottom of the screen is completely empty, indicating no items are currently held. The health bar shows 10 hearts, and the hunger bar is also full. There are no visible structures, mobs, or items in the immediate area. The environment features green grass, scattered flowers, and some distant trees. No other entities or objects are visible in the scene.
+# </think>
+# <answer>[{"bbox_2d": [350, 25, 429, 311], "label": "pig"}]</answer> 
+                                # expects same as reflection
+                                # takes 70+ secs, 273w load
+                                # self.pprint("model.grounding(task, obs)", str(model.grounding(task, img)))
+                    # model: Optimus3Agent
+                    if True:
+                        if self.task_type == "captioning":
                             # Captioning returns text, not action; just skip action
+                            # self.pprint("Model captioning result: " + str(model.(task, img_128)))
                             action = {"camera": [0.0, 0.0]}
                         elif self.task_type == "embodied_qa":
+                            self.pprint("Model embodied_qa result: " + str(model.answer(task, img_128)))
                             # Embodied QA returns text, not action; just skip action
                             action = {"camera": [0.0, 0.0]}
                         elif self.task_type == "grounding":
+                            self.pprint("Model grounding result: " + str(model.grounding(task, img_128)))
                             # Grounding returns text, not action; just skip action
                             action = {"camera": [0.0, 0.0]}
                         elif self.task_type == "planning":
+                            self.pprint("Model Planning result: " + str(model.plan(task)))
                             # Planning returns text, not action; just skip action
+                            action = {"camera": [0.0, 0.0]}
+                        elif self.task_type == "router":
+                            # Router returns text, not action; just skip action
+                            router_output = model.router(self.text)
+                            router_label = LABEL2TASK.get(router_output, 'Unknown')
+                            # returns int
+                            query = self.text
+                            # test logits
+                            logits = model.task_router.forward(query)  # tensor
+                            self.pprint(str(logits.detach().cpu().numpy()))  # посмотреть все scores
+                            self.pprint(f"✓ Router output: {router_label} ({str(router_output)})")
+                            if router_label == "action":
+                                self.pprint("   -> Switching to action head.")
+                                task_type = "action"
+                                self.task_type = "action"
+                            # attack a player, eat a portkshop - 4
+                            # what we need to craft - 0
+                            #
                             action = {"camera": [0.0, 0.0]}
                         else:
                             action = {"camera": [0.0, 0.0]}
+                        task_type = "action"
+                        self.task_type = "action"
+                        if True:  # always do action
+                            if self.task_type == "action":
+                                raw_action, memory = model.get_action({"image": obs}, self.text)
+                                action_dict = copy.deepcopy(dict(numpy_to_list(raw_action)))
+                                action = action_dict
+                            
+                        
                         # --- Insert logic for attack ---
                         if "attack" in action and action["attack"] > 0:
                             for k in ["jump", "left", "right", "sneak", "sprint"]:
@@ -430,7 +499,7 @@ if USE_AI_AGENT:
         "MinecraftOptimus/Optimus-3",
         "MinecraftOptimus/Optimus-3-Task-Router",
         # device="cuda:0"
-        device="mps"
+        device=device
     )
 else:
     model = None

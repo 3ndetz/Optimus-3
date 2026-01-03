@@ -185,10 +185,14 @@ class Optimus3ActionAgent(ModelHubMixin):
         mineclip_config=MINECLIP_CONFIG,
         agent_pi_head_config=None,
         agent_policy_config=None,
+        model_torch_device=""
     ) -> None:
         self.text_cond_scale = text_cond_scale
         self.visual_cond_scale = visual_cond_scale
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        if model_torch_device == "":
+            self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        else:
+            self.device = model_torch_device
 
         # self.mineclip = load_mineclip_wconfig(self.device)
         self.mineclip = MineCLIP(**mineclip_config)

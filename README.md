@@ -18,3 +18,19 @@ Plays block game
 - [ ] Easy OWN training pipeline
   - [ ] Building support with schematic supervising
 - [ ] NeuroStreamer integration
+
+## Getting Started
+
+1. Start minecraft with installed AutoClef mod release
+2. Run the script
+
+```bash
+python autoclef_test_optimized.py
+```
+
+## Installation
+
+```bash
+git clone
+uv sync
+```
