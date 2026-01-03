@@ -40,6 +40,11 @@ from minecraftoptimus.utils import TASK2LABEL
 
 from collections import defaultdict
 
+WEB_PORT = 8888
+WEB_HOST = "0.0.0.0"
+
+DEFAULT_CAMERA_SENS = 10.0
+
 # Inverting the TASK2LABEL dict
 label2tasks = defaultdict(list)
 for task, label in TASK2LABEL.items():
@@ -117,11 +122,11 @@ class WebHandler(BaseHTTPRequestHandler):
                 self.app_ref.text = data.get('text', '')
                 self.app_ref.task_type = data.get('task_type', 'action')
                 # Parse camera_sensitivity as float if present, else default
-                cam_sens = data.get('camera_sensitivity', 15.0)
+                cam_sens = data.get('camera_sensitivity', DEFAULT_CAMERA_SENS)
                 try:
                     cam_sens = float(cam_sens)
                 except Exception:
-                    cam_sens = 7.0
+                    cam_sens = DEFAULT_CAMERA_SENS
                 self.app_ref.camera_sensitivity = cam_sens
                 self.send_response(200)
                 self.end_headers()
@@ -167,7 +172,7 @@ class WebHandler(BaseHTTPRequestHandler):
         <div class="panel">
             <h2>Task Selection</h2>
             <div class="row">
-                <input type="text" id="camera_sensitivity" placeholder="7.0" style="width:30px;">
+                <input type="text" id="camera_sensitivity" placeholder="10.0" style="width:30px;">
                 <input type="text" id="text_input" placeholder="Enter task text..." style="width:300px;">
                 <select id="task_type_select">
                     <option value="action">Action</option>
@@ -254,7 +259,7 @@ example_imgio = io.BytesIO()
 Image.open('debug_game_screenshot.png').convert('RGB').save(example_imgio, format='PNG')
 
 class MineBridgeApp:
-    def __init__(self, nickname, server, port=DEFAULT_PORT, web_port=8888):
+    def __init__(self, nickname, server, port=DEFAULT_PORT, web_port=WEB_PORT):
         self.nickname = nickname
         self.server = server
         self.port = port
@@ -266,7 +271,7 @@ class MineBridgeApp:
         self.last_screenshot_b64 = None
         self.last_action = {}
         self.last_keys = {}
-        self.camera_sensitivity = 7.0  # Change this to increase/decrease camera speed
+        self.camera_sensitivity = DEFAULT_CAMERA_SENS  # Change this to increase/decrease camera speed
         self.last_timing = {}
         # New: text and task_type for agent logic
         self.text = "kill"
@@ -279,10 +284,10 @@ class MineBridgeApp:
     def start_web_server(self):
         """Start minimal web server in background"""
         WebHandler.app_ref = self
-        server = HTTPServer(('localhost', self.web_port), WebHandler)
+        server = HTTPServer((WEB_HOST, self.web_port), WebHandler)
         thread = threading.Thread(target=server.serve_forever, daemon=True)
         thread.start()
-        self.pprint(f"Web server started at http://localhost:{self.web_port}")
+        self.pprint(f"Web server started at http://{WEB_HOST}:{self.web_port}")
 
     def mine_bridge_handler(self):
         """Main handler for the py4j bridge."""
@@ -509,5 +514,5 @@ if model:
     model.reset(task)
 
 if __name__ == "__main__":
-    app = MineBridgeApp(nickname="NetTyan", server="localhost", port=DEFAULT_PORT, web_port=8888)
+    app = MineBridgeApp(nickname="NetTyan", server="localhost", port=DEFAULT_PORT)
     app.mine_bridge_handler()
