@@ -116,6 +116,7 @@ class Optimus3Agent(BaseAgent, ModelHubMixin):
             {"role": "user", "content": [{"type": "text", "text": task}]},
         ]
         output = self._generate(messages, task_type="action", skip_special_tokens=False)
+        print("GOT OUTPUT FOR ACTION EMBEDDING (WITH TASK LABEL):", output)
         task_label = output[0][:-10]
         messages.append({"role": "assistant", "content": task_label})
 
@@ -129,6 +130,7 @@ class Optimus3Agent(BaseAgent, ModelHubMixin):
             padding=True,
             return_tensors="pt",
         )
+        print("BATCH INPUT TEXTS FOR ACTION EMBEDDING:", texts)
         batch_input["tasks"] = torch.tensor([TASK2LABEL["action"]] * batch_input["input_ids"].shape[0])
         batch_input["labels"] = batch_input["input_ids"].clone()
         condition = (batch_input["labels"] < 151665) | (batch_input["labels"] > 151674)
