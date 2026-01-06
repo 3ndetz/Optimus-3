@@ -382,8 +382,8 @@ class MineBridgeApp:
                     img_128 = img.resize((128, 128))  # FOR ACTION
                     img_action = img.resize((640, 360))  # FOR REFLECTION/QA/ETC
                     # # Force normalization to 0-1 range UNTESTED
-                    obs = np.array(img_128).astype(np.float32) / 255.0
-                    # obs = np.array(img_128)
+                    # obs = np.array(img_128).astype(np.float32) / 255.0
+                    obs = np.array(img_128)
                     self.last_screenshot_b64 = pilImage_to_b64(img_action)  # base64.b64encode(imgio.getvalue()).decode('utf-8')
                     # --- AGENT LOGIC: handle text/task_type changes ---
                     if self.text != last_text or self.task_type != last_task_type:
