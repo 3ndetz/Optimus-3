@@ -83,11 +83,23 @@ class Optimus3Agent(BaseAgent, ModelHubMixin):
 
         self.cache_mllm_embed = None
         self.cache_task = None
+        try:
+            self.model = Optimus3ForConditionalGeneration.from_pretrained(
+                mllm_model_path,  # attn_implementation="flash_attention_2",
+                # torch_dtype=self.torch_dtype,
+                device_map="auto",
+                # Requires accelerate
+                load_in_8bit=True
+                # load_in_4bit=True
 
-        self.model = Optimus3ForConditionalGeneration.from_pretrained(
-            mllm_model_path, # attn_implementation="flash_attention_2",
-            torch_dtype=self.torch_dtype, # load_in_4bit=True
-        )
+            )
+        except Exception as e:
+            print(f"Warning: Failed to load MLLM model in 8/4 bit precision, maybe you dont have bitsandbytes: {e}, loading in full precision.")
+            self.model = Optimus3ForConditionalGeneration.from_pretrained(
+                mllm_model_path,
+                torch_dtype=self.torch_dtype,
+                device_map="auto",
+            )
         # MPS, was bfloat16
         # TODO select dtype
         self.processor = AutoProcessor.from_pretrained(mllm_model_path)
@@ -98,9 +110,11 @@ class Optimus3Agent(BaseAgent, ModelHubMixin):
 
         self.model.eval()
         self.task_router.eval()
-
-        self.model.to(self.device)
-        self.task_router.to(self.device)
+        try:
+            self.model.to(self.device)  # errors on MPS when in 4/8bit -_-
+            self.task_router.to(self.device)
+        except Exception as e:
+            print(f"Warning: Failed to move models to device {self.device}: {e}")
 
         self.task: str | None = None
 
